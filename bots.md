@@ -10,4 +10,4 @@
 4. Copy .env.example to .env than fill your Discord/Telegram token
 5. Spawn `python import-discord-emoji-from-telegram.py <telegram sticker set name> <discord server id> [skip count]` to import your favorite sticker!
 
-Note: If you use the official bots, you need `Bot ` prefix in the bot's token, but userbots (not recommended) doesn't require it
+Note: If you use the official Discord bots, you need `Bot ` prefix in the bot's token, but userbots (not recommended) doesn't require it
