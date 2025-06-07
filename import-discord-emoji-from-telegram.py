@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 from discord.userbot.bot import DiscordUserbot
 from telegram.bot.bot import TelegramBot
-from utils import video_bytes_to_gif_bytes
+from utils import video_bytes_to_gif_bytes, tgs_bytes_to_gif_bytes, compress_gif
 
 load_dotenv()
 
@@ -70,12 +70,14 @@ def main():
                 # static image, upload directly
                 discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, raw_file, "image/webp")
             elif sticker_type == StickerType.VIDEO:
+                # .mp4 or something
                 # convent to gif
-                gif_bytes = video_bytes_to_gif_bytes(raw_file, 30, 256)
+                gif_bytes = compress_gif(video_bytes_to_gif_bytes(raw_file, 30, 256))
                 discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, gif_bytes, "image/gif")
             else:
-                # rLottie files are not supported
-                pass
+                # rLottie files
+                gif_bytes = compress_gif(tgs_bytes_to_gif_bytes(raw_file), size=(64, 64))
+                discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, gif_bytes, "image/gif")
             print(f"Successfully uploaded {emoji_name} [{i + 1}]")
         except requests.exceptions.RequestException:
             print(f"Failed to import sticker [{i + 1}]")
