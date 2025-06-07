@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 from enum import StrEnum, Enum, auto
 
 import requests
@@ -83,8 +84,9 @@ def main():
                 gif_bytes = compress_gif(tgs_bytes_to_gif_bytes(raw_file), size=(64, 64))
                 discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, gif_bytes, "image/gif")
             print(f"Successfully uploaded {emoji_name} [{i + 1}]")
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as e:
             print(f"Failed to import sticker [{i + 1}]")
+            traceback.print_exc()
 
 
 if __name__ == '__main__':
