@@ -37,11 +37,12 @@ def main():
     discord_token = os.getenv("DISCORD_TOKEN")
     telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print("import-discord-emoji-from-telegram.py <telegram sticker name> <dc server id>")
         sys.exit(1)
     sticker_set_name = sys.argv[1]
     discord_server_id = sys.argv[2]
+    skip_count = int(sys.argv[3])
 
     telegram_bot = TelegramBot(telegram_bot_token)
     discord_bot = DiscordUserbot(discord_token)
@@ -59,6 +60,9 @@ def main():
 
     # download stickers and upload to Discord
     for i, sticker in enumerate(stickers):
+        if skip_count != 0:
+            skip_count -= 1
+            continue
         print(f"Downloading sticker [{i + 1}]")
         sticker_type: StickerType = sticker["type"]
         raw_file = telegram_bot.file_service.download_telegram_file(sticker["file_id"])
