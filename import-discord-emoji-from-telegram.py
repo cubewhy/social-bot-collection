@@ -2,6 +2,9 @@ import os
 import sys
 import time
 import traceback
+
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
+from tqdm import tqdm
 from enum import Enum, auto
 
 import requests
@@ -61,44 +64,55 @@ def main():
         sys.exit(1)
 
     # download stickers and upload to Discord
-    for i, sticker in enumerate(stickers):
-        if skip_count != 0:
-            skip_count -= 1
-            continue
-        print(f"Downloading sticker [{i + 1}]")
-        sticker_type: StickerType = sticker["type"]
-        raw_file = telegram_bot.file_service.download_telegram_file(sticker["file_id"])
-        # upload to discord
-        for retry in range(5):
-            try:
-                print(f"Uploading [{i + 1}] (retry={retry})")
-                emoji_name = f"tg_{trim_sticker_set_name(sticker_set_name)}_{i}"
-                if sticker_type == StickerType.STATIC:
-                    # static image, upload directly
-                    r = discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, raw_file, "image/webp")
-                elif sticker_type == StickerType.VIDEO:
-                    # .mp4 or something
-                    # convent to webp
-                    webp_bytes = video_bytes_to_webp_bytes(raw_file, 30, 256)
-                    r = discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, webp_bytes, "image/webp")
-                else:
-                    # rLottie files
-                    gif_bytes = compress_gif(tgs_bytes_to_gif_bytes(raw_file), size=(64, 64))
-                    r = discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, gif_bytes, "image/webp")
-                if "message" in r:
-                    error_message = r["message"]
-                    print(f"Failed to upload sticker {error_message}")
-                    if "The resource is being rate limited." in error_message:
-                        # limited
-                        timeout = int(r["retry_after"]) + 1
-                        print(f"Waiting timeout... ({timeout}s)")
-                        time.sleep(timeout)
-                else:
-                    print(f"Successfully uploaded {emoji_name} [{i + 1}]")
-                    break
-            except requests.exceptions.RequestException:
-                print(f"Failed to import sticker [{i + 1}] (retry={retry})")
-                traceback.print_exc()
+    with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(bar_width=None),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeRemainingColumn(),
+            transient=True,
+    ) as progress:
+        task = progress.add_task("Processing stickers...", total=len(stickers))
+
+        for i, sticker in enumerate(stickers):
+            if skip_count != 0:
+                skip_count -= 1
+                continue
+
+            progress.update(task, advance=1, description=f"Uploading sticker {i + 1}/{len(stickers)}")
+            sticker_type: StickerType = sticker["type"]
+            raw_file = telegram_bot.file_service.download_telegram_file(sticker["file_id"])
+
+            for retry in range(5):
+                try:
+                    emoji_name = f"tg_{trim_sticker_set_name(sticker_set_name)}_{i}"
+                    if sticker_type == StickerType.STATIC:
+                        r = discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, raw_file,
+                                                                   "image/webp")
+                    elif sticker_type == StickerType.VIDEO:
+                        webp_bytes = video_bytes_to_webp_bytes(raw_file, 30, 256)
+                        r = discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, webp_bytes,
+                                                                   "image/webp")
+                    else:
+                        gif_bytes = compress_gif(tgs_bytes_to_gif_bytes(raw_file), size=(64, 64))
+                        r = discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, gif_bytes,
+                                                                   "image/webp")
+
+                    if "message" in r:
+                        msg = r["message"]
+                        progress.console.print(f"[red]Upload failed:[/] {msg}")
+                        if "rate limited" in msg:
+                            timeout = int(r["retry_after"]) + 1
+                            progress.console.print(f"[yellow]Rate limited. Waiting {timeout}s...[/]")
+                            for remaining in range(timeout, 0, -1):
+                                time.sleep(1)
+                                progress.console.print(f"Retrying in {remaining}s...", end="\r")
+                        continue
+                    else:
+                        break
+                except requests.exceptions.RequestException:
+                    progress.console.print(f"[red]Network error while uploading sticker {i + 1}[/]")
+                    traceback.print_exc()
 
 
 if __name__ == '__main__':
