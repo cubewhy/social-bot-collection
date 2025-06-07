@@ -10,13 +10,13 @@ import io
 def video_bytes_to_gif_bytes(
         video_data: bytes,
         fps: int = 10,
-        width: int = 480,
+        size: int = 480,
 ) -> bytes:
     cmd = [
         "ffmpeg",
         "-hide_banner", "-loglevel", "error",
         "-i", "pipe:0",
-        "-vf", f"fps={fps},scale={width}:-1:flags=lanczos",
+        "-vf", f"fps={fps},scale={size}:-1:flags=lanczos",
         "-gifflags", "+transdiff",
         "-f", "gif",
         "pipe:1"
@@ -52,7 +52,7 @@ def tgs_bytes_to_gif_bytes(
                 destFiles=dest_files,
                 frameSkip=frame_skip,
                 scale=scale,
-                backgroundColour="ff00ff",
+                backgroundColour="ffffff",
             ))
             return tmp_gif.read()
 
@@ -75,7 +75,7 @@ def compress_gif(gif_bytes: bytes, fps: int = 30, colors: int = 32, size: tuple[
         return make_gif_transparent(out_buf.getvalue())
 
 
-def make_gif_transparent(gif_bytes: bytes, transparent_color=(255, 0, 255)) -> bytes:
+def make_gif_transparent(gif_bytes: bytes, transparent_color=(255, 255, 255)) -> bytes:
     with Image.open(io.BytesIO(gif_bytes)) as im:
         frames = []
         for frame in ImageSequence.Iterator(im):
