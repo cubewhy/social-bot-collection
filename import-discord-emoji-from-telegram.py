@@ -28,6 +28,10 @@ def get_sticker_type(sticker: dict):
     return StickerType.STATIC
 
 
+def trim_sticker_set_name(name: str) -> str:
+    return name[:18]
+
+
 def main():
     # read token from env
     discord_token = os.getenv("DISCORD_TOKEN")
@@ -61,13 +65,13 @@ def main():
         # upload to discord
         try:
             print(f"Uploading [{i + 1}]")
-            emoji_name = f"tg_{sticker_set_name}_{i}"
+            emoji_name = f"tg_{trim_sticker_set_name(sticker_set_name)}_{i}"
             if sticker_type == StickerType.STATIC:
                 # static image, upload directly
                 discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, raw_file, "image/webp")
             elif sticker_type == StickerType.VIDEO:
                 # convent to gif
-                gif_bytes = video_bytes_to_gif_bytes(raw_file, 30, 512)
+                gif_bytes = video_bytes_to_gif_bytes(raw_file, 30, 256)
                 discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, gif_bytes, "image/gif")
             else:
                 # rLottie files are not supported
