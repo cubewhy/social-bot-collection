@@ -52,7 +52,7 @@ def tgs_bytes_to_gif_bytes(
                 destFiles=dest_files,
                 frameSkip=frame_skip,
                 scale=scale,
-                backgroundColour="ffffff",
+                backgroundColour="ff00ff",
             ))
             return tmp_gif.read()
 
@@ -72,4 +72,24 @@ def compress_gif(gif_bytes: bytes, fps: int = 30, colors: int = 32, size: tuple[
             optimize=True,
             duration=int(1000 / fps)
         )
-        return out_buf.getvalue()
+        return make_gif_transparent(out_buf.getvalue())
+
+
+def make_gif_transparent(gif_bytes: bytes, transparent_color=(255, 0, 255)) -> bytes:
+    with Image.open(io.BytesIO(gif_bytes)) as im:
+        frames = []
+        for frame in ImageSequence.Iterator(im):
+            frame = frame.convert("RGBA")
+            datas = frame.getdata()
+            new_data = []
+            for item in datas:
+                if item[:3] == transparent_color:
+                    new_data.append((0, 0, 0, 0))
+                else:
+                    new_data.append(item)
+            frame.putdata(new_data)
+            frames.append(frame)
+
+        buf = io.BytesIO()
+        frames[0].save(buf, format="GIF", save_all=True, append_images=frames[1:], loop=0, transparency=0)
+        return buf.getvalue()
