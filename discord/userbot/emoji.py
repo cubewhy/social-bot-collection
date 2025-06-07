@@ -19,7 +19,7 @@ class EmojiService:
             },
             headers=build_discord_restapi_headers(self.token)
         )
-        print(r.json())
+        return r.json()
 
     def query_emojis(self, server_id: str):
         r = requests.get(
