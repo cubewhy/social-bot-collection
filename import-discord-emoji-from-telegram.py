@@ -42,7 +42,7 @@ def main():
         sys.exit(1)
     sticker_set_name = sys.argv[1]
     discord_server_id = sys.argv[2]
-    skip_count = int(sys.argv[3])
+    skip_count = int(sys.argv[3]) if len(sys.argv) >= 4 else 0
 
     telegram_bot = TelegramBot(telegram_bot_token)
     discord_bot = DiscordUserbot(discord_token)
