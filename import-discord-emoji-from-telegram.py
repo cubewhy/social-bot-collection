@@ -2,18 +2,15 @@ import os
 import sys
 import time
 import traceback
-
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
-from tqdm import tqdm
 from enum import Enum, auto
 
 import requests
-
 from dotenv import load_dotenv
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
 
 from discord.userbot.bot import DiscordUserbot
 from telegram.bot.bot import TelegramBot
-from utils import video_bytes_to_gif_bytes, tgs_bytes_to_gif_bytes, compress_gif, video_bytes_to_webp_bytes
+from utils import tgs_bytes_to_gif_bytes, compress_gif, video_bytes_to_webp_bytes
 
 load_dotenv()
 
@@ -103,10 +100,11 @@ def main():
                         progress.console.print(f"[red]Upload failed:[/] {msg}")
                         if "rate limited" in msg:
                             timeout = int(r["retry_after"]) + 1
-                            progress.console.print(f"[yellow]Rate limited. Waiting {timeout}s...[/]")
-                            for remaining in range(timeout, 0, -1):
+                            countdown_task = progress.add_task("[yellow]⏳ Retrying in...", total=timeout)
+                            for _ in range(timeout):
                                 time.sleep(1)
-                                progress.console.print(f"Retrying in {remaining}s...", end="\r")
+                                progress.advance(countdown_task)
+                            progress.remove_task(countdown_task)
                         continue
                     else:
                         break
