@@ -1,0 +1,5 @@
+requests==2.32.3
+python-dotenv==1.1.0
+moviepy==2.2.1
+numpy==2.3.0rc1
+imageio==2.37.0

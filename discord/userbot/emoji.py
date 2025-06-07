@@ -8,13 +8,13 @@ class EmojiService:
     def __init__(self, token: str):
         self.token = token
 
-    def upload_emoji(self, server_id: str, emoji_name: str, image: bytes):
+    def upload_emoji(self, server_id: str, emoji_name: str, image: bytes, content_type: str = "image/webp"):
         image_base64 = base64.b64encode(image).decode('utf-8')
 
         r = requests.post(
             f"https://discord.com/api/v9/guilds/{server_id}/emojis",
             json={
-                "image": f"data:image/webp;base64,{image_base64}",
+                "image": f"data:{content_type};base64,{image_base64}",
                 "name": emoji_name
             },
             headers=build_discord_restapi_headers(self.token)

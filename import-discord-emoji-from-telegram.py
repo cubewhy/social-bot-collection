@@ -1,13 +1,31 @@
 import os
 import sys
+from enum import StrEnum, Enum, auto
+
 import requests
 
 from dotenv import load_dotenv
 
 from discord.userbot.bot import DiscordUserbot
 from telegram.bot.bot import TelegramBot
+from utils import video_bytes_to_gif_bytes
 
 load_dotenv()
+
+
+class StickerType(Enum):
+    STATIC = auto()
+    VIDEO = auto()
+    R_LOTTIE = auto()  # not supported yet
+
+
+def get_sticker_type(sticker: dict):
+    # if not v["is_animated"] and not v["is_video"]
+    if sticker["is_animated"]:
+        return StickerType.R_LOTTIE
+    elif sticker["is_video"]:
+        return StickerType.VIDEO
+    return StickerType.STATIC
 
 
 def main():
@@ -16,7 +34,7 @@ def main():
     telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
     if len(sys.argv) != 3:
-        print("main.py <telegram sticker name> <dc server id>")
+        print("import-discord-emoji-from-telegram.py <telegram sticker name> <dc server id>")
         sys.exit(1)
     sticker_set_name = sys.argv[1]
     discord_server_id = sys.argv[2]
@@ -28,8 +46,9 @@ def main():
     stickers0 = telegram_bot.sticker_service.query_sticker_pack(sticker_set_name)
     # filter animated
     stickers = [{
-        "file_id": v["file_id"]
-    } for v in stickers0 if not v["is_animated"] and not v["is_video"]]
+        "file_id": v["file_id"],
+        "type": get_sticker_type(v)
+    } for v in stickers0]
     if len(stickers) == 0:
         print("Animated stickers are not supported yet.")
         sys.exit(1)
@@ -37,12 +56,22 @@ def main():
     # download stickers and upload to Discord
     for i, sticker in enumerate(stickers):
         print(f"Downloading sticker [{i + 1}]")
+        sticker_type: StickerType = sticker["type"]
         raw_file = telegram_bot.file_service.download_telegram_file(sticker["file_id"])
         # upload to discord
         try:
             print(f"Uploading [{i + 1}]")
             emoji_name = f"tg_{sticker_set_name}_{i}"
-            discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, raw_file)
+            if sticker_type == StickerType.STATIC:
+                # static image, upload directly
+                discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, raw_file, "image/webp")
+            elif sticker_type == StickerType.VIDEO:
+                # convent to gif
+                gif_bytes = video_bytes_to_gif_bytes(raw_file, 30, 512)
+                discord_bot.emoji_service.upload_emoji(discord_server_id, emoji_name, gif_bytes, "image/gif")
+            else:
+                # rLottie files are not supported
+                pass
             print(f"Successfully uploaded {emoji_name} [{i + 1}]")
         except requests.exceptions.RequestException:
             print(f"Failed to import sticker [{i + 1}]")

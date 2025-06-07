@@ -1,8 +1,12 @@
-# Discord emoji sync bot
+# Social Media Bot Collection
 
-## Usage
+The repository includes my social media bot works
 
-1. Create a Discord account
-2. Get a bot token from Telegram [BotFather](https://t.me/BotFather)
-3. Copy .env.example to .env than fill your Discord/Telegram token
-4. Spawn `python main.py <telegram sticker set name> <discord server id>` to import your favorite sticker!
+## Disclaimer
+
+The bots here are not for advertising purposes,
+they just help me with some automation and will not be updated for abuse in the future!
+
+## Bots
+
+Please visit [this article](bots.md)
