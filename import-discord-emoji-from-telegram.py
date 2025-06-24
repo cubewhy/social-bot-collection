@@ -39,6 +39,14 @@ def main():
     discord_token = os.getenv("DISCORD_TOKEN")
     telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
+    if discord_token is None:
+        print("Please set Discord token manually via DISCORD_TOKEN environment val")
+        sys.exit(1)
+
+    if telegram_bot_token is None:
+        print("Please set Telegram bot token manually via TELEGRAM_BOT_TOKEN environment val")
+        sys.exit(1)
+
     if len(sys.argv) < 3:
         print("import-discord-emoji-from-telegram.py <telegram sticker name> <dc server id>")
         sys.exit(1)
